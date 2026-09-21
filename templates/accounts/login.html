@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in · FSTD Ops Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#0a1523', 900: '#0e1c30' },
+            amber: { DEFAULT: '#d99a3c' },
+            paper: '#f3f5f9',
+          },
+          fontFamily: {
+            display: ['Space Grotesk', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-navy-950 font-sans text-white">
+  <div class="flex min-h-screen flex-col items-center justify-center px-4 py-8">
+    <img src="{% static 'img/canavia-logo.png' %}" alt="Canavia Aviation Academy logo" class="mb-8 block h-auto w-full max-w-[172px]">
+    <div class="w-full max-w-md rounded-2xl bg-white p-8 text-navy-900 shadow-xl">
+      <div class="mb-6">
+        <h1 class="font-display text-2xl font-semibold">FSTD Ops Manager</h1>
+        <p class="mt-1 text-sm text-slate-500">FSTD Compliance Software · Sign in with your account.</p>
+      </div>
+      {% if form.non_field_errors %}
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <form method="post" class="space-y-4">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+        <div>
+          <label class="mb-1 block text-xs font-semibold" for="id_username">Username</label>
+          <input class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" type="text" name="username" id="id_username" autofocus required>
+        </div>
+        <div>
+          <label class="mb-1 block text-xs font-semibold" for="id_password">Password</label>
+          <input class="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm" type="password" name="password" id="id_password" required>
+        </div>
+        <button type="submit" class="w-full rounded-lg bg-navy-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-900">Sign in</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

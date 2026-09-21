@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load ui_tags %}
+
+{% block topbar_actions %}
+<a href="{% url 'operations:hold_item_add' %}" class="rounded-lg bg-amber px-3 py-2 text-sm font-semibold text-navy-950">+ Log hold item</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" class="mb-4 flex flex-wrap gap-2">
+  <select name="device" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" onchange="this.form.submit()">
+    <option value="all">All devices</option>
+    {% for device in devices %}
+      <option value="{{ device.pk }}" {% if request.GET.device == device.pk|stringformat:'s' %}selected{% endif %}>{{ device.name }}</option>
+    {% endfor %}
+  </select>
+  <select name="status" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" onchange="this.form.submit()">
+    <option value="all">All statuses</option>
+    <option value="Open" {% if request.GET.status == 'Open' %}selected{% endif %}>Open</option>
+    <option value="Closed" {% if request.GET.status == 'Closed' %}selected{% endif %}>Closed</option>
+  </select>
+  <select name="category" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm" onchange="this.form.submit()">
+    <option value="all">All categories</option>
+    {% for value, label in categories %}
+      <option value="{{ value }}" {% if request.GET.category == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</form>
+<div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table class="min-w-full text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-4 py-3">Item #</th>
+        <th class="px-4 py-3">Device</th>
+        <th class="px-4 py-3">ATL log/item</th>
+        <th class="px-4 py-3">Description</th>
+        <th class="px-4 py-3">Report date</th>
+        <th class="px-4 py-3">Category / Due</th>
+        <th class="px-4 py-3">Status</th>
+        <th class="px-4 py-3">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+        <tr class="border-t border-slate-100">
+          <td class="px-4 py-3 font-mono text-xs">Item {{ item.seq }}</td>
+          <td class="px-4 py-3">{{ item.device.name }}</td>
+          <td class="px-4 py-3 font-mono text-xs">{{ item.atl_log_item|default:"—" }}</td>
+          <td class="px-4 py-3 max-w-xs">
+            <div class="truncate">{{ item.description }}</div>
+            {% if item.affected_version %}<div class="text-xs text-slate-500">Affects: {{ item.affected_version }}</div>{% endif %}
+          </td>
+          <td class="px-4 py-3 font-mono text-xs">{{ item.report_date|default:"—" }}</td>
+          <td class="px-4 py-3">
+            {% if item.defect_category %}
+              <span class="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold">{{ item.get_defect_category_display }}</span>
+            {% endif %}
+            {% if item.due_date %}
+              <span class="ml-1 font-mono text-xs text-slate-500">{{ item.due_date }}</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if item.closure_date %}
+              <span class="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">Closed</span>
+            {% else %}
+              <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-deep">Open</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <div class="flex justify-end gap-1.5">
+              {% url 'operations:hold_item_info' item.pk as info_url %}
+              {% url 'operations:hold_item_edit' item.pk as edit_url %}
+              {% include "includes/btn_outline.html" with label="More info" modal_url=info_url modal_wide="true" %}
+              {% include "includes/btn_ghost.html" with label="Edit" href=edit_url %}
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td class="px-4 py-8 text-center text-slate-500" colspan="8">No hold items yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block topbar_actions %}
+<a href="{% url 'documents:upload' %}?folder={{ folder.pk }}" class="rounded-lg bg-amber px-3 py-2 text-sm font-semibold text-navy-950">+ Upload document</a>
+{% endblock %}
+
+{% block content %}
+<p class="mb-4 text-sm"><a href="{% url 'documents:list' %}" class="text-amber-deep hover:underline">← Folders</a></p>
+<div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+  <table class="min-w-full text-sm">
+    <thead class="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-4 py-3">Name</th>
+        <th class="px-4 py-3">Device</th>
+        <th class="px-4 py-3">Uploaded</th>
+        <th class="px-4 py-3"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doc in documents %}
+        <tr class="border-t border-slate-100">
+          <td class="px-4 py-3 font-semibold">{% if doc.file %}<a class="text-amber-deep hover:underline" href="{{ doc.file.url }}">{{ doc.original_name }}</a>{% else %}{{ doc.original_name }}{% endif %}</td>
+          <td class="px-4 py-3">{{ doc.device|default:"General" }}</td>
+          <td class="px-4 py-3 font-mono text-xs">{{ doc.uploaded_on }}</td>
+          <td class="px-4 py-3 text-right"><a class="text-red-700 hover:underline" href="{% url 'documents:delete' doc.pk %}">Remove</a></td>
+        </tr>
+      {% empty %}
+        <tr><td class="px-4 py-8 text-center text-slate-500" colspan="4">No documents in this folder.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if not folder.is_standard %}
+  <p class="mt-4"><a class="text-sm text-red-700" href="{% url 'documents:folder_delete' folder.pk %}">Delete folder</a></p>
+{% endif %}
+{% endblock %}

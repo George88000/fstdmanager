@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block topbar_actions %}
+<a href="{% url 'documents:folder_add' %}" class="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold">+ New folder</a>
+<a href="{% url 'documents:upload' %}" class="rounded-lg bg-amber px-3 py-2 text-sm font-semibold text-navy-950">+ Upload document</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  {% for folder in folders %}
+    <a href="{% url 'documents:folder' folder.pk %}" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-amber">
+      <div class="text-3xl">{{ folder.icon }}</div>
+      <div class="mt-2 font-display font-semibold">{{ folder.name }}</div>
+      <div class="text-xs text-slate-500">{{ folder.documents.count }} document{{ folder.documents.count|pluralize }}{% if not folder.is_standard %} · custom{% endif %}</div>
+    </a>
+  {% empty %}
+    <div class="text-slate-500">No folders yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}

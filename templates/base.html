@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ page_title|default:"FSTD Ops Manager" }}{% endblock %} · {{ organization.ato_name|default:"FSTD Manager" }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { 950: '#0a1523', 900: '#0e1c30', 800: '#16293f', 700: '#1e3450' },
+            amber: { DEFAULT: '#d99a3c', deep: '#b97b1f' },
+            paper: '#f3f5f9',
+          },
+          fontFamily: {
+            display: ['Space Grotesk', 'sans-serif'],
+            sans: ['Inter', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'ui-monospace', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-paper font-sans text-navy-900 antialiased">
+  <div class="flex min-h-screen">
+    <aside class="hidden md:flex w-60 flex-none flex-col bg-navy-950 text-slate-300">
+      <div class="border-b border-white/10 px-5 py-5">
+        <a href="{% url 'core:dashboard' %}" class="group block rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-amber/60">
+          <img src="{% static 'img/canavia-logo.png' %}" alt="Canavia Aviation Academy logo" class="mb-3 block h-auto w-full max-w-[172px]">
+          <h1 class="font-display text-lg font-semibold text-white leading-tight group-hover:text-white">FSTD Ops Manager</h1>
+        </a>
+        <div class="mt-0.5 text-xs text-slate-400">FSTD Compliance Software</div>
+      </div>
+      <nav class="flex-1 overflow-y-auto px-3 py-4 text-sm">
+        <div class="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Overview</div>
+        <a href="{% url 'core:dashboard' %}" class="mb-1 flex items-center gap-2.5 rounded-lg px-3 py-2 {% if request.resolver_match.url_name == 'dashboard' %}bg-navy-800 text-white relative before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-amber{% else %}hover:bg-white/5 hover:text-white{% endif %}"><span class="w-4 flex-none text-center text-[13px] leading-none opacity-80">&#9673;</span><span>Dashboard</span></a>
+
+        <div class="mt-4 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">FSTD</div>
+        {% include "includes/nav_link.html" with url_name="devices:list" label="FSTD Devices" icon="&#9635;" %}
+        {% include "includes/nav_link.html" with url_name="qualification:qtg" label="QTG Validation" icon="&#9202;" badge=sidebar_badges.qtg %}
+        {% include "includes/nav_link.html" with url_name="qualification:subjective" label="Subjective Tests" icon="&#9998;" badge=sidebar_badges.subjective %}
+        {% include "includes/nav_link.html" with url_name="qualification:navdata" label="Navdata" icon="&#127760;" badge=sidebar_badges.navdata %}
+        {% include "includes/nav_link.html" with url_name="operations:maintenance" label="Maintenance" icon="&#128295;" badge=sidebar_badges.maintenance %}
+        {% include "includes/nav_link.html" with url_name="operations:hold_items" label="Hold Item List" icon="&#128203;" badge=sidebar_badges.hil %}
+        {% include "includes/nav_link.html" with url_name="operations:permanent_defects" label="Permanent Defects" icon="&#128204;" %}
+        {% include "includes/nav_link.html" with url_name="findings:authority" label="Authority Findings" icon="&#9888;" badge=sidebar_badges.findings %}
+        {% include "includes/nav_link.html" with url_name="findings:internal" label="Internal Audit Findings" icon="&#128269;" badge=sidebar_badges.internal %}
+        {% include "includes/nav_link.html" with url_name="documents:list" label="Documentation" icon="&#128193;" %}
+        {% include "includes/nav_link.html" with url_name="remote:list" label="Remote Connection" icon="&#128421;" %}
+
+        <div class="mt-4 px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500">System</div>
+        {% include "includes/nav_link.html" with url_name="core:settings" label="Settings" icon="&#9881;" %}
+      </nav>
+      <div class="border-t border-white/10 px-5 py-4 text-[11px] text-slate-500">
+        Signed in as {{ request.user.username }}
+        <form method="post" action="{% url 'accounts:logout' %}" class="mt-2">
+          {% csrf_token %}
+          <button type="submit" class="text-amber hover:text-white">Log out</button>
+        </form>
+      </div>
+    </aside>
+
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-6 py-4">
+        <div>
+          <h2 class="font-display text-xl font-semibold text-navy-900">{% block page_title %}{{ page_title|default:"Dashboard" }}{% endblock %}</h2>
+          <p class="text-sm text-slate-500">{% block page_desc %}{{ page_desc|default:"" }}{% endblock %}</p>
+        </div>
+        <div class="flex items-center gap-2">{% block topbar_actions %}{% endblock %}</div>
+      </header>
+      <main class="flex-1 p-6">
+        {% if messages %}
+          <div class="mb-4 space-y-2">
+            {% for message in messages %}
+              <div class="rounded-lg border px-3 py-2 text-sm {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-800{% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  <div id="modal-root"></div>
+  <script src="{% static 'js/modals.js' %}"></script>
+</body>
+</html>

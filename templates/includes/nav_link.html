@@ -1,0 +1,7 @@
+<a href="{% url url_name %}" class="mb-1 flex items-center gap-2.5 rounded-lg px-3 py-2 {% if request.resolver_match.view_name == url_name %}bg-navy-800 text-white relative before:absolute before:left-0 before:top-1/2 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-amber{% else %}hover:bg-white/5 hover:text-white{% endif %}">
+  {% if icon %}<span class="w-4 flex-none text-center text-[13px] leading-none opacity-80">{{ icon|safe }}</span>{% endif %}
+  <span class="flex-1">{{ label }}</span>
+  {% if badge %}
+    <span class="rounded-full bg-amber px-1.5 py-0.5 font-mono text-[10px] font-semibold text-navy-950">{{ badge }}</span>
+  {% endif %}
+</a>

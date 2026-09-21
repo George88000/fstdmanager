@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block topbar_actions %}
+<a href="{% url 'remote:add' %}" class="rounded-lg bg-amber px-3 py-2 text-sm font-semibold text-navy-950">+ Add connection</a>
+{% endblock %}
+
+{% block content %}
+<div class="grid gap-4 lg:grid-cols-2">
+  {% for connection in connections %}
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h3 class="font-display font-semibold">{{ connection.label }}</h3>
+          <div class="mt-1 font-mono text-sm text-slate-600">{{ connection.anydesk_id }}</div>
+        </div>
+        <a href="{% url 'remote:edit' connection.pk %}" class="text-sm text-amber-deep hover:underline">Edit</a>
+      </div>
+      <div class="mt-3 text-sm"><span class="text-xs uppercase text-slate-500">Password</span> <span class="font-mono">{{ connection.password }}</span></div>
+      {% if connection.devices.all %}
+        <div class="mt-2 text-xs text-slate-500">{% for d in connection.devices.all %}{{ d.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>
+      {% endif %}
+    </div>
+  {% empty %}
+    <div class="text-slate-500">No remote connections yet.</div>
+  {% endfor %}
+</div>
+{% endblock %}
