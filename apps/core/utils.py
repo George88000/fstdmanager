@@ -472,3 +472,37 @@ def count_cycle_alerts(kind: str, threshold_days: int = 30) -> int:
         for row in QualificationCycle.objects.filter(kind=kind)
         if is_compliance_alert_status(status_from_due(row.next_due, threshold_days))
     )
+
+
+def list_view_query_string(request, **overrides) -> str:
+    params = request.GET.copy()
+    for key, value in overrides.items():
+        if value is None or value == "":
+            params.pop(key, None)
+        else:
+            params[key] = str(value)
+    return params.urlencode()
+
+
+def archive_years_for(queryset) -> list[int]:
+    from django.db.models.functions import ExtractYear
+
+    return list(
+        queryset.filter(archived_at__isnull=False)
+        .annotate(year=ExtractYear("archived_at"))
+        .values_list("year", flat=True)
+        .distinct()
+        .order_by("-year")
+    )
+
+
+def selected_archive_year(request, years: list[int]) -> int:
+    requested = request.GET.get("year")
+    if requested and requested.isdigit():
+        year = int(requested)
+        if year in years:
+            return year
+    if years:
+        current = date.today().year
+        return current if current in years else years[0]
+    return date.today().year

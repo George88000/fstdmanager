@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.operations.views import (
+    HoldItemArchiveView,
     HoldItemCreateView,
     HoldItemDeleteView,
     HoldItemInfoView,
@@ -23,6 +24,7 @@ urlpatterns = [
     path("hold-items/<int:pk>/info/", HoldItemInfoView.as_view(), name="hold_item_info"),
     path("hold-items/<int:pk>/edit/", HoldItemUpdateView.as_view(), name="hold_item_edit"),
     path("hold-items/<int:pk>/delete/", HoldItemDeleteView.as_view(), name="hold_item_delete"),
+    path("hold-items/<int:pk>/archive/", HoldItemArchiveView.as_view(), name="hold_item_archive"),
     path("permanent-defects/", PermanentDefectListView.as_view(), name="permanent_defects"),
     path("permanent-defects/add/", PermanentDefectCreateView.as_view(), name="permanent_defect_add"),
     path(

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from apps.core.models import UserTrackedModel
 
@@ -46,6 +47,8 @@ class Finding(UserTrackedModel):
     description = models.TextField(blank=True)
     resolution = models.TextField(blank=True)
     closure_evidence = models.TextField(blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["source", "seq", "id"]
@@ -59,6 +62,10 @@ class Finding(UserTrackedModel):
         prefix = "AUD" if self.source == self.Source.INTERNAL else "FIND"
         return f"{prefix}-{self.seq:04d}"
 
+    @property
+    def is_closed(self):
+        return self.status == self.Status.CLOSED
+
     def save(self, *args, **kwargs):
         if not self.seq:
             last = (
@@ -68,4 +75,10 @@ class Finding(UserTrackedModel):
                 .first()
             )
             self.seq = (last or 0) + 1
+        if self.is_closed:
+            if not self.closed_at:
+                self.closed_at = timezone.now()
+        else:
+            self.closed_at = None
+            self.archived_at = None
         super().save(*args, **kwargs)

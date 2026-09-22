@@ -2,12 +2,15 @@ from datetime import date
 
 from django.contrib import messages
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from apps.core.models import OrganizationSettings
-from apps.core.utils import maintenance_list_row
+from apps.core.utils import archive_years_for, list_view_query_string, maintenance_list_row, selected_archive_year
 from apps.devices.models import Device
 from apps.documents.models import Document
 from apps.operations.forms import HoldItemForm, MaintenanceTaskForm, PermanentDefectForm
@@ -21,6 +24,12 @@ class HoldItemListView(ListView):
 
     def get_queryset(self):
         qs = HoldItem.objects.select_related("device")
+        archive_mode = self.request.GET.get("view") == "archive"
+        if archive_mode:
+            year = selected_archive_year(self.request, archive_years_for(HoldItem.objects.all()))
+            qs = qs.filter(archived_at__isnull=False, archived_at__year=year)
+        else:
+            qs = qs.filter(archived_at__isnull=True)
         device = self.request.GET.get("device")
         if device and device != "all":
             qs = qs.filter(device_id=device)
@@ -37,6 +46,9 @@ class HoldItemListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         threshold = OrganizationSettings.get_solo().threshold_days
+        archive_years = archive_years_for(HoldItem.objects.all())
+        archive_mode = self.request.GET.get("view") == "archive"
+        selected_year = selected_archive_year(self.request, archive_years) if archive_mode else None
         context.update(
             {
                 "page_title": "Hold Item List",
@@ -44,9 +56,35 @@ class HoldItemListView(ListView):
                 "threshold": threshold,
                 "devices": Device.objects.all(),
                 "categories": HoldItem.Category.choices,
+                "archive_mode": archive_mode,
+                "archive_years": archive_years,
+                "selected_year": selected_year,
+                "active_tab_query": list_view_query_string(self.request, view=None, year=None),
+                "archive_tab_query": list_view_query_string(
+                    self.request,
+                    view="archive",
+                    year=selected_archive_year(self.request, archive_years),
+                ),
             }
         )
         return context
+
+
+class HoldItemArchiveView(View):
+    def post(self, request, pk):
+        item = get_object_or_404(HoldItem, pk=pk)
+        list_url = reverse("operations:hold_items")
+        if item.closure_date is None:
+            messages.error(request, "Only closed hold items can be archived.")
+            return redirect(list_url)
+        if item.archived_at:
+            messages.warning(request, "Hold item is already archived.")
+            return redirect(list_url)
+        item.archived_at = timezone.now()
+        item.updated_by = request.user
+        item.save(update_fields=["archived_at", "updated_by", "updated_at"])
+        messages.success(request, f"Hold item archived to {item.archived_at.year} archive.")
+        return redirect(list_url)
 
 
 class HoldItemCreateView(CreateView):

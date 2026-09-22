@@ -24,6 +24,13 @@
     <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Authority / auditor</span><span>{{ object.authority|default:"—" }}</span></div>
     <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Date raised</span><span class="font-mono">{{ object.date_raised|default:"—" }}</span></div>
     <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Corrective action due</span><span class="font-mono">{{ object.due_date|default:"—" }}</span></div>
+    {% if object.closed_at %}
+      <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Closed at</span><span class="font-mono">{{ object.closed_at|date:"Y-m-d H:i" }} UTC</span></div>
+    {% endif %}
+    {% if object.archived_at %}
+      <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Archived at</span><span class="font-mono">{{ object.archived_at|date:"Y-m-d H:i" }} UTC</span></div>
+    {% endif %}
+    <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Last updated</span><span class="font-mono">{{ object.updated_at|date:"Y-m-d H:i" }} UTC</span></div>
   </div>
   <div>
     <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Description</div>

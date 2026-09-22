@@ -5,7 +5,7 @@ from apps.operations.models import HoldItem, MaintenanceEvent, MaintenanceTask, 
 
 @admin.register(HoldItem)
 class HoldItemAdmin(admin.ModelAdmin):
-    list_display = ("seq", "device", "defect_category", "report_date", "due_date", "closure_date")
+    list_display = ("seq", "device", "defect_category", "report_date", "due_date", "closure_date", "closed_at", "archived_at")
     list_filter = ("defect_category",)
 
 

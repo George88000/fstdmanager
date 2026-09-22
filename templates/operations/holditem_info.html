@@ -38,9 +38,18 @@
         <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Closure ATL</span><span class="font-mono">{{ object.closure_atl_log_item|default:"—" }}</span></div>
         <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Hours at closure</span><span class="font-mono">{{ object.closure_hours|default:"—" }}</span></div>
         <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Closed by</span><span>{{ object.initials_closure|default:"—" }}</span></div>
+        {% if object.closed_at %}
+          <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Closed at</span><span class="font-mono">{{ object.closed_at|date:"Y-m-d H:i" }} UTC</span></div>
+        {% endif %}
+        {% if object.archived_at %}
+          <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Archived at</span><span class="font-mono">{{ object.archived_at|date:"Y-m-d H:i" }} UTC</span></div>
+        {% endif %}
       </div>
     </div>
   {% endif %}
+  <div class="grid gap-2 sm:grid-cols-2">
+    <div class="flex justify-between gap-2 border-b border-slate-100 py-1.5"><span class="text-slate-500">Last updated</span><span class="font-mono">{{ object.updated_at|date:"Y-m-d H:i" }} UTC</span></div>
+  </div>
 </div>
 <div class="flex justify-end gap-2 border-t border-slate-200 px-5 py-3">
   <button type="button" data-modal-close class="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-navy-900">Close</button>

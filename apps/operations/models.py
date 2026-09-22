@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 from apps.core.constants import HIL_CATEGORIES
 from apps.core.models import TimeStampedModel, UserTrackedModel
@@ -35,6 +36,8 @@ class HoldItem(UserTrackedModel):
     closure_hours = models.CharField(max_length=20, blank=True)
     closure_date = models.DateField(null=True, blank=True)
     initials_closure = models.CharField(max_length=80, blank=True)
+    closed_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints = [
@@ -62,6 +65,12 @@ class HoldItem(UserTrackedModel):
             days = HIL_CATEGORIES.get(self.defect_category, {}).get("days")
             if days:
                 self.due_date = add_days(self.report_date, days)
+        if self.closure_date:
+            if not self.closed_at:
+                self.closed_at = timezone.now()
+        else:
+            self.closed_at = None
+            self.archived_at = None
         super().save(*args, **kwargs)
 
 
