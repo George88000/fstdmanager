@@ -8,11 +8,7 @@
 {% block content %}
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
   {% for folder in folders %}
-    <a href="{% url 'documents:folder' folder.pk %}" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-amber">
-      <div class="text-3xl">{{ folder.icon }}</div>
-      <div class="mt-2 font-display font-semibold">{{ folder.name }}</div>
-      <div class="text-xs text-slate-500">{{ folder.documents.count }} document{{ folder.documents.count|pluralize }}{% if not folder.is_standard %} · custom{% endif %}</div>
-    </a>
+    {% include "documents/includes/folder_card.html" %}
   {% empty %}
     <div class="text-slate-500">No folders yet.</div>
   {% endfor %}

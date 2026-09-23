@@ -1,0 +1,7 @@
+<a href="{% url 'documents:folder' folder.pk %}" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:border-amber">
+  <div class="text-3xl">{{ folder.icon }}</div>
+  <div class="mt-2 font-display font-semibold">{{ folder.name }}</div>
+  <div class="text-xs text-slate-500">
+    {% if folder.child_count %}{{ folder.child_count }} subfolder{{ folder.child_count|pluralize }} · {% endif %}{{ folder.document_count }} document{{ folder.document_count|pluralize }}{% if not folder.is_standard %} · custom{% endif %}
+  </div>
+</a>

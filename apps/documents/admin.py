@@ -5,7 +5,8 @@ from apps.documents.models import Document, Folder
 
 @admin.register(Folder)
 class FolderAdmin(admin.ModelAdmin):
-    list_display = ("name", "icon", "is_standard")
+    list_display = ("name", "parent", "icon", "is_standard")
+    list_filter = ("is_standard", "parent")
 
 
 @admin.register(Document)

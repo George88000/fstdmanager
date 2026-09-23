@@ -1,10 +1,11 @@
 from django.contrib import messages
-from django.shortcuts import get_object_or_404
+from django.db.models import Count
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, DeleteView, ListView
+from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from apps.core.constants import STANDARD_FOLDERS
-from apps.documents.forms import DocumentForm, FolderForm
+from apps.documents.forms import DocumentForm, DocumentMoveForm, FolderForm
 from apps.documents.models import Document, Folder
 
 
@@ -12,8 +13,15 @@ def ensure_standard_folders():
     for item in STANDARD_FOLDERS:
         Folder.objects.get_or_create(
             name=item["name"],
+            parent=None,
             defaults={"icon": item["icon"], "is_standard": True},
         )
+
+
+def folder_return_url(folder):
+    if folder:
+        return reverse("documents:folder", args=[folder.pk])
+    return reverse("documents:list")
 
 
 class FolderListView(ListView):
@@ -23,7 +31,10 @@ class FolderListView(ListView):
 
     def get_queryset(self):
         ensure_standard_folders()
-        return Folder.objects.all()
+        return Folder.objects.filter(parent__isnull=True).annotate(
+            document_count=Count("documents", distinct=True),
+            child_count=Count("children", distinct=True),
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -40,14 +51,44 @@ class FolderCreateView(CreateView):
     model = Folder
     form_class = FolderForm
     template_name = "documents/folder_form.html"
-    success_url = reverse_lazy("documents:list")
+
+    def dispatch(self, request, *args, **kwargs):
+        self.parent = None
+        parent_id = request.GET.get("parent")
+        if parent_id:
+            self.parent = get_object_or_404(Folder, pk=parent_id)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["parent"] = self.parent
+        return kwargs
+
+    def get_success_url(self):
+        return folder_return_url(self.object.parent)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"page_title": "New folder", "page_desc": ""})
+        if self.parent:
+            context.update(
+                {
+                    "page_title": "New subfolder",
+                    "page_desc": self.parent.display_path(),
+                    "cancel_url": folder_return_url(self.parent),
+                }
+            )
+        else:
+            context.update(
+                {
+                    "page_title": "New folder",
+                    "page_desc": "",
+                    "cancel_url": reverse("documents:list"),
+                }
+            )
         return context
 
     def form_valid(self, form):
+        form.instance.parent = self.parent
         messages.success(self.request, "Folder created.")
         return super().form_valid(form)
 
@@ -60,10 +101,34 @@ class FolderDeleteView(DeleteView):
     def get_queryset(self):
         return Folder.objects.filter(is_standard=False)
 
+    def get_success_url(self):
+        parent_id = getattr(self, "_redirect_parent_id", None)
+        if parent_id:
+            return reverse("documents:folder", args=[parent_id])
+        return reverse("documents:list")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"page_title": "Delete folder", "cancel_url": reverse("documents:list")})
+        context.update(
+            {
+                "page_title": "Delete folder",
+                "cancel_url": reverse("documents:folder", args=[self.object.pk]),
+            }
+        )
         return context
+
+    def form_valid(self, form):
+        folder = self.object
+        colliding = folder.colliding_child_names_on_delete()
+        if colliding:
+            messages.error(
+                self.request,
+                f"Cannot delete this folder: {', '.join(colliding)} already exists at the destination level.",
+            )
+            return redirect("documents:folder", pk=folder.pk)
+        self._redirect_parent_id = folder.parent_id
+        messages.success(self.request, "Folder deleted.")
+        return super().form_valid(form)
 
 
 class FolderDetailView(ListView):
@@ -83,6 +148,11 @@ class FolderDetailView(ListView):
         context.update(
             {
                 "folder": self.folder,
+                "subfolders": self.folder.children.annotate(
+                    document_count=Count("documents", distinct=True),
+                    child_count=Count("children", distinct=True),
+                ),
+                "breadcrumbs": self.folder.ancestors(),
                 "page_title": self.folder.name,
                 "page_desc": "Documents in this folder",
             }
@@ -119,6 +189,36 @@ class DocumentCreateView(CreateView):
         form.instance.size = upload.size
         form.instance.created_by = self.request.user
         messages.success(self.request, "Document uploaded.")
+        return super().form_valid(form)
+
+
+class DocumentMoveView(UpdateView):
+    model = Document
+    form_class = DocumentMoveForm
+    template_name = "documents/document_move.html"
+
+    def get_success_url(self):
+        if self.object.folder_id:
+            return reverse("documents:folder", args=[self.object.folder_id])
+        return reverse("documents:list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.object.folder_id:
+            cancel_url = reverse("documents:folder", args=[self.object.folder_id])
+        else:
+            cancel_url = reverse("documents:list")
+        context.update(
+            {
+                "page_title": f"Move {self.object.original_name}",
+                "page_desc": "",
+                "cancel_url": cancel_url,
+            }
+        )
+        return context
+
+    def form_valid(self, form):
+        messages.success(self.request, "Document moved.")
         return super().form_valid(form)
 
 
