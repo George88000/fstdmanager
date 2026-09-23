@@ -19,7 +19,7 @@
     {% if not is_renew and not is_log_entry %}
       <button type="submit" name="renew" value="1" class="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-navy-950">Save &amp; archive current</button>
     {% endif %}
-    <a href="{% url 'operations:maintenance' %}" class="text-sm text-slate-500">Cancel</a>
+    <a href="{{ cancel_url }}" class="text-sm text-slate-500">Cancel</a>
   </div>
 </form>
 {% if attachments %}

@@ -2,19 +2,19 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from apps.core.models import OrganizationSettings
-from apps.core.utils import archive_years_for, list_view_query_string, selected_archive_year
+from apps.core.utils import archive_years_for, list_view_query_string, remembered_list_url, selected_archive_year
+from apps.core.views import RemembersListFiltersMixin, ReturnsToFilteredListMixin
 from apps.devices.models import Device
 from apps.findings.forms import FindingForm
 from apps.findings.models import Finding
 
 
-class FindingListView(ListView):
+class FindingListView(RemembersListFiltersMixin, ListView):
     model = Finding
     template_name = "findings/finding_list.html"
     context_object_name = "findings"
@@ -103,8 +103,9 @@ class FindingArchiveView(View):
 
     def post(self, request, pk):
         finding = get_object_or_404(Finding, pk=pk, source=self.source)
-        list_url = reverse(
-            "findings:internal" if self.source == Finding.Source.INTERNAL else "findings:authority"
+        list_url = remembered_list_url(
+            request,
+            "findings:internal" if self.source == Finding.Source.INTERNAL else "findings:authority",
         )
         if finding.status != Finding.Status.CLOSED:
             messages.error(request, "Only closed findings can be archived.")
@@ -132,14 +133,16 @@ class FindingInfoView(DetailView):
         return HttpResponse(html)
 
 
-class FindingCreateView(CreateView):
+class FindingFilteredListMixin(ReturnsToFilteredListMixin):
+    def get_list_url_name(self):
+        return "findings:internal" if self.source == Finding.Source.INTERNAL else "findings:authority"
+
+
+class FindingCreateView(FindingFilteredListMixin, CreateView):
     model = Finding
     form_class = FindingForm
     template_name = "findings/finding_form.html"
     source = Finding.Source.AUTHORITY
-
-    def get_success_url(self):
-        return reverse("findings:internal" if self.source == Finding.Source.INTERNAL else "findings:authority")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -155,7 +158,7 @@ class FindingCreateView(CreateView):
         return super().form_valid(form)
 
 
-class FindingUpdateView(UpdateView):
+class FindingUpdateView(FindingFilteredListMixin, UpdateView):
     model = Finding
     form_class = FindingForm
     template_name = "findings/finding_form.html"
@@ -163,9 +166,6 @@ class FindingUpdateView(UpdateView):
 
     def get_queryset(self):
         return Finding.objects.filter(source=self.source)
-
-    def get_success_url(self):
-        return reverse("findings:internal" if self.source == Finding.Source.INTERNAL else "findings:authority")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -178,16 +178,13 @@ class FindingUpdateView(UpdateView):
         return super().form_valid(form)
 
 
-class FindingDeleteView(DeleteView):
+class FindingDeleteView(FindingFilteredListMixin, DeleteView):
     model = Finding
     template_name = "findings/finding_confirm_delete.html"
     source = Finding.Source.AUTHORITY
 
     def get_queryset(self):
         return Finding.objects.filter(source=self.source)
-
-    def get_success_url(self):
-        return reverse("findings:internal" if self.source == Finding.Source.INTERNAL else "findings:authority")
 
     def form_valid(self, form):
         messages.success(self.request, "Finding deleted.")

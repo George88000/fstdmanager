@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.core.exceptions import ImproperlyConfigured
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic import FormView, TemplateView
@@ -7,10 +8,42 @@ from apps.core.forms import CategoryForm, SettingsForm
 from apps.core.models import OrganizationSettings
 from apps.core.utils import (
     build_compliance_alerts,
+    clear_list_filters,
     compliance_badge,
     dashboard_chart_data,
     dashboard_stat_cards,
+    remember_list_filters,
+    remembered_list_url,
 )
+
+
+class RemembersListFiltersMixin:
+    def get(self, request, *args, **kwargs):
+        url_name = request.resolver_match.view_name
+        if request.GET:
+            remember_list_filters(request, url_name)
+        else:
+            clear_list_filters(request, url_name)
+        return super().get(request, *args, **kwargs)
+
+
+class ReturnsToFilteredListMixin:
+    list_url_name = None
+
+    def get_list_url_name(self) -> str:
+        if not self.list_url_name:
+            raise ImproperlyConfigured(
+                f"{self.__class__.__name__} must define list_url_name or get_list_url_name()."
+            )
+        return self.list_url_name
+
+    def get_success_url(self):
+        return remembered_list_url(self.request, self.get_list_url_name())
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["cancel_url"] = remembered_list_url(self.request, self.get_list_url_name())
+        return context
 
 
 class DashboardView(TemplateView):

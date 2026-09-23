@@ -4,20 +4,26 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
-from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
 from apps.core.models import OrganizationSettings
-from apps.core.utils import archive_years_for, list_view_query_string, maintenance_list_row, selected_archive_year
+from apps.core.utils import (
+    archive_years_for,
+    list_view_query_string,
+    maintenance_list_row,
+    remembered_list_url,
+    selected_archive_year,
+)
+from apps.core.views import RemembersListFiltersMixin, ReturnsToFilteredListMixin
 from apps.devices.models import Device
 from apps.documents.models import Document
 from apps.operations.forms import HoldItemForm, MaintenanceTaskForm, PermanentDefectForm
 from apps.operations.models import HoldItem, MaintenanceEvent, MaintenanceTask, PermanentDefect
 
 
-class HoldItemListView(ListView):
+class HoldItemListView(RemembersListFiltersMixin, ListView):
     model = HoldItem
     template_name = "operations/holditem_list.html"
     context_object_name = "items"
@@ -73,7 +79,7 @@ class HoldItemListView(ListView):
 class HoldItemArchiveView(View):
     def post(self, request, pk):
         item = get_object_or_404(HoldItem, pk=pk)
-        list_url = reverse("operations:hold_items")
+        list_url = remembered_list_url(request, "operations:hold_items")
         if item.closure_date is None:
             messages.error(request, "Only closed hold items can be archived.")
             return redirect(list_url)
@@ -87,11 +93,11 @@ class HoldItemArchiveView(View):
         return redirect(list_url)
 
 
-class HoldItemCreateView(CreateView):
+class HoldItemCreateView(ReturnsToFilteredListMixin, CreateView):
     model = HoldItem
     form_class = HoldItemForm
     template_name = "operations/holditem_form.html"
-    success_url = reverse_lazy("operations:hold_items")
+    list_url_name = "operations:hold_items"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -104,11 +110,11 @@ class HoldItemCreateView(CreateView):
         return super().form_valid(form)
 
 
-class HoldItemUpdateView(UpdateView):
+class HoldItemUpdateView(ReturnsToFilteredListMixin, UpdateView):
     model = HoldItem
     form_class = HoldItemForm
     template_name = "operations/holditem_form.html"
-    success_url = reverse_lazy("operations:hold_items")
+    list_url_name = "operations:hold_items"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -130,18 +136,18 @@ class HoldItemInfoView(DetailView):
         return HttpResponse(html)
 
 
-class HoldItemDeleteView(DeleteView):
+class HoldItemDeleteView(ReturnsToFilteredListMixin, DeleteView):
     model = HoldItem
     template_name = "operations/confirm_delete.html"
-    success_url = reverse_lazy("operations:hold_items")
+    list_url_name = "operations:hold_items"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update({"page_title": "Delete hold item", "cancel_url": reverse("operations:hold_items")})
+        context.update({"page_title": "Delete hold item"})
         return context
 
 
-class PermanentDefectListView(ListView):
+class PermanentDefectListView(RemembersListFiltersMixin, ListView):
     model = PermanentDefect
     template_name = "operations/permanentdefect_list.html"
     context_object_name = "items"
@@ -179,11 +185,11 @@ class PermanentDefectInfoView(DetailView):
         return HttpResponse(html)
 
 
-class PermanentDefectCreateView(CreateView):
+class PermanentDefectCreateView(ReturnsToFilteredListMixin, CreateView):
     model = PermanentDefect
     form_class = PermanentDefectForm
     template_name = "operations/permanentdefect_form.html"
-    success_url = reverse_lazy("operations:permanent_defects")
+    list_url_name = "operations:permanent_defects"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -196,11 +202,11 @@ class PermanentDefectCreateView(CreateView):
         return super().form_valid(form)
 
 
-class PermanentDefectUpdateView(UpdateView):
+class PermanentDefectUpdateView(ReturnsToFilteredListMixin, UpdateView):
     model = PermanentDefect
     form_class = PermanentDefectForm
     template_name = "operations/permanentdefect_form.html"
-    success_url = reverse_lazy("operations:permanent_defects")
+    list_url_name = "operations:permanent_defects"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -213,20 +219,18 @@ class PermanentDefectUpdateView(UpdateView):
         return super().form_valid(form)
 
 
-class PermanentDefectDeleteView(DeleteView):
+class PermanentDefectDeleteView(ReturnsToFilteredListMixin, DeleteView):
     model = PermanentDefect
     template_name = "operations/confirm_delete.html"
-    success_url = reverse_lazy("operations:permanent_defects")
+    list_url_name = "operations:permanent_defects"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(
-            {"page_title": "Delete permanent defect", "cancel_url": reverse("operations:permanent_defects")}
-        )
+        context.update({"page_title": "Delete permanent defect"})
         return context
 
 
-class MaintenanceListView(ListView):
+class MaintenanceListView(RemembersListFiltersMixin, ListView):
     model = MaintenanceTask
     template_name = "operations/maintenance_list.html"
     context_object_name = "rows"
@@ -267,11 +271,11 @@ class MaintenanceListView(ListView):
         return context
 
 
-class MaintenanceUpdateView(UpdateView):
+class MaintenanceUpdateView(ReturnsToFilteredListMixin, UpdateView):
     model = MaintenanceTask
     form_class = MaintenanceTaskForm
     template_name = "operations/maintenance_form.html"
-    success_url = reverse_lazy("operations:maintenance")
+    list_url_name = "operations:maintenance"
 
     def get_initial(self):
         initial = super().get_initial()

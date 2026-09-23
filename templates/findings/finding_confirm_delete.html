@@ -6,7 +6,7 @@
   <p class="text-sm text-slate-600">Delete <strong>{{ object }}</strong>?</p>
   <div class="mt-4 flex gap-3">
     <button type="submit" class="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white">Delete</button>
-    <a href="javascript:history.back()" class="rounded-lg border border-slate-200 px-4 py-2 text-sm">Cancel</a>
+    <a href="{{ cancel_url }}" class="rounded-lg border border-slate-200 px-4 py-2 text-sm">Cancel</a>
   </div>
 </form>
 {% endblock %}

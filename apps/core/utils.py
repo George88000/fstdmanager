@@ -484,6 +484,34 @@ def list_view_query_string(request, **overrides) -> str:
     return params.urlencode()
 
 
+LIST_FILTER_SESSION_KEY = "list_filters"
+
+
+def remember_list_filters(request, list_url_name: str) -> None:
+    filters = dict(request.session.get(LIST_FILTER_SESSION_KEY) or {})
+    filters[list_url_name] = request.GET.urlencode()
+    request.session[LIST_FILTER_SESSION_KEY] = filters
+
+
+def clear_list_filters(request, list_url_name: str) -> None:
+    filters = dict(request.session.get(LIST_FILTER_SESSION_KEY) or {})
+    if list_url_name not in filters:
+        return
+    filters.pop(list_url_name)
+    request.session[LIST_FILTER_SESSION_KEY] = filters
+
+
+def remembered_list_url(request, list_url_name: str) -> str:
+    from django.urls import reverse
+
+    url = reverse(list_url_name)
+    filters = request.session.get(LIST_FILTER_SESSION_KEY) or {}
+    query = filters.get(list_url_name)
+    if query:
+        return f"{url}?{query}"
+    return url
+
+
 def archive_years_for(queryset) -> list[int]:
     from django.db.models.functions import ExtractYear
 
