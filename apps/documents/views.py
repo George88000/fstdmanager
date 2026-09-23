@@ -5,7 +5,7 @@ from django.urls import reverse, reverse_lazy
 from django.views.generic import CreateView, DeleteView, ListView, UpdateView
 
 from apps.core.constants import STANDARD_FOLDERS
-from apps.documents.forms import DocumentForm, DocumentMoveForm, FolderForm
+from apps.documents.forms import DocumentEditForm, DocumentForm, DocumentMoveForm, FolderForm
 from apps.documents.models import Document, Folder
 
 
@@ -189,6 +189,37 @@ class DocumentCreateView(CreateView):
         form.instance.size = upload.size
         form.instance.created_by = self.request.user
         messages.success(self.request, "Document uploaded.")
+        return super().form_valid(form)
+
+
+class DocumentEditView(UpdateView):
+    model = Document
+    form_class = DocumentEditForm
+    template_name = "documents/document_edit.html"
+
+    def get_success_url(self):
+        if self.object.folder_id:
+            return reverse("documents:folder", args=[self.object.folder_id])
+        return reverse("documents:list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.object.folder_id:
+            cancel_url = reverse("documents:folder", args=[self.object.folder_id])
+        else:
+            cancel_url = reverse("documents:list")
+        context.update(
+            {
+                "page_title": f"Edit {self.object.original_name}",
+                "page_desc": "",
+                "cancel_url": cancel_url,
+            }
+        )
+        return context
+
+    def form_valid(self, form):
+        form.instance.updated_by = self.request.user
+        messages.success(self.request, "Document updated.")
         return super().form_valid(form)
 
 

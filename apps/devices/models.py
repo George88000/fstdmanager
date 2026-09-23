@@ -29,8 +29,8 @@ class Device(UserTrackedModel):
         DAYS_28 = "28d", "28 days"
 
     class MaintenanceProgram(models.TextChoices):
-        A = "program_a", "Monthly / 12-Month / 300-Hour / As Required"
-        B = "program_b", "Monthly / 12-Month / As Required"
+        A = "program_a", "Monthly / 12-Month / 300-Hour / 3-Year / As Required"
+        B = "program_b", "Monthly / 12-Month / 300-Hour / 6-Month / As Required"
         C = "program_c", "Quarterly / Semester / 12-Month"
 
     legacy_id = models.CharField(max_length=40, unique=True, null=True, blank=True)

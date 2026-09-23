@@ -41,7 +41,8 @@
           <td class="px-4 py-3">{{ doc.device|default:"General" }}</td>
           <td class="px-4 py-3 font-mono text-xs">{{ doc.uploaded_on }}</td>
           <td class="px-4 py-3 text-right">
-            <a class="text-amber-deep hover:underline" href="{% url 'documents:move' doc.pk %}">Move</a>
+            <a class="text-amber-deep hover:underline" href="{% url 'documents:edit' doc.pk %}">Edit</a>
+            <a class="ml-3 text-amber-deep hover:underline" href="{% url 'documents:move' doc.pk %}">Move</a>
             <a class="ml-3 text-red-700 hover:underline" href="{% url 'documents:delete' doc.pk %}">Remove</a>
           </td>
         </tr>

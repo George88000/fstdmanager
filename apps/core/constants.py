@@ -41,11 +41,24 @@ MAINTENANCE_PROGRAMS = {
     "program_a": [
         {"key": "monthly", "name": "Monthly Inspection", "kind": "monthly"},
         {"key": "annual", "name": "12-Month Inspection", "kind": "annual"},
-        {"key": "hours300", "name": "300-Hour Inspection", "kind": "hours", "hours_interval": 300},
+        {
+            "key": "hours300",
+            "name": "300-Hour Inspection",
+            "kind": "hours",
+            "hours_interval": 300,
+        },
+        {"key": "3_year", "name": "3-Year Inspection", "kind": "3_year"},
         {"key": "as_required", "name": "As Required", "kind": "as_required"},
     ],
     "program_b": [
         {"key": "monthly", "name": "Monthly Inspection", "kind": "monthly"},
+        {
+            "key": "hours300",
+            "name": "300-Hour Inspection",
+            "kind": "hours",
+            "hours_interval": 300,
+        },
+        {"key": "6_month", "name": "6-Month Inspection", "kind": "6_month"},
         {"key": "annual", "name": "12-Month Inspection", "kind": "annual"},
         {"key": "as_required", "name": "As Required", "kind": "as_required"},
     ],

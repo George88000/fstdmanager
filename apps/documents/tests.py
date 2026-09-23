@@ -1,8 +1,12 @@
+import re
+
 from django.contrib.auth.models import User
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
 
+from apps.devices.models import Device
+from apps.documents.forms import folder_choice_label, iter_folders_tree
 from apps.documents.models import Document, Folder
 
 
@@ -90,9 +94,21 @@ class DocumentMoveTests(TestCase):
         self.assertEqual(self.doc.folder, self.target)
 
     def test_upload_form_shows_folder_paths(self):
-        Folder.objects.create(name="2024", parent=self.source)
+        child = Folder.objects.create(name="2024", parent=self.source)
+        reports = Folder.objects.create(name="Reports", parent=self.target)
         response = self.client.get(reverse("documents:upload"))
-        self.assertContains(response, "Manuals / 2024")
+        select_html = re.search(r'<select[^>]*name="folder"[^>]*>(.*?)</select>', response.content.decode(), re.S).group(1)
+        labels = [
+            label
+            for label in re.findall(r"<option[^>]*>([^<]+)</option>", select_html)
+            if not label.startswith("---")
+        ]
+        expected = [
+            folder_choice_label(folder, depth) for folder, depth in iter_folders_tree()
+        ]
+        self.assertEqual(labels, expected)
+        self.assertIn(folder_choice_label(child, 1), labels)
+        self.assertIn(folder_choice_label(reports, 1), labels)
 
     def test_upload_creates_file_in_subfolder(self):
         child = Folder.objects.create(name="2024", parent=self.source)
@@ -103,3 +119,35 @@ class DocumentMoveTests(TestCase):
         )
         self.assertRedirects(response, reverse("documents:folder", args=[child.pk]))
         self.assertTrue(Document.objects.filter(original_name="spec.pdf", folder=child).exists())
+
+
+class DocumentEditTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user("tester", password="pass")
+        self.client.force_login(self.user)
+        self.folder = Folder.objects.create(name="Manuals", icon="📘")
+        self.device = Device.objects.create(
+            name="A320 Sim",
+            type=Device.Type.FFS,
+            manufacturer="CAE",
+            location="Hangar 1",
+        )
+        self.doc = Document.objects.create(original_name="guide.pdf", folder=self.folder)
+
+    def test_edit_document_name_and_device(self):
+        response = self.client.post(
+            reverse("documents:edit", args=[self.doc.pk]),
+            {"original_name": "updated-guide.pdf", "device": self.device.pk},
+        )
+        self.assertRedirects(response, reverse("documents:folder", args=[self.folder.pk]))
+        self.doc.refresh_from_db()
+        self.assertEqual(self.doc.original_name, "updated-guide.pdf")
+        self.assertEqual(self.doc.device, self.device)
+        self.assertEqual(self.doc.updated_by, self.user)
+
+    def test_edit_page_shows_form(self):
+        response = self.client.get(reverse("documents:edit", args=[self.doc.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "updated-guide.pdf", count=0)
+        self.assertContains(response, "guide.pdf")
+        self.assertContains(response, "File name")
